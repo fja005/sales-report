@@ -1,0 +1,183 @@
+import os
+from datetime import datetime
+from uuid import uuid4
+
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+
+UPLOAD_FOLDER = "static/uploads"
+CHART_FOLDER = "static/charts"
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CHART_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["CHART_FOLDER"] = CHART_FOLDER
+
+
+def validar_columnas(df):
+    columnas_esperadas = {"fecha", "producto", "categoria", "cantidad", "precio"}
+    columnas_archivo = {str(col).strip().lower() for col in df.columns}
+    return columnas_esperadas.issubset(columnas_archivo)
+
+
+def normalizar_dataframe(df):
+    df.columns = [str(col).strip().lower() for col in df.columns]
+
+    df["producto"] = df["producto"].astype(str).str.strip()
+    df["categoria"] = df["categoria"].astype(str).str.strip()
+
+    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce")
+    df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
+
+    df = df.dropna(subset=["fecha", "producto", "categoria", "cantidad", "precio"])
+    df["total"] = df["cantidad"] * df["precio"]
+
+    return df
+
+
+def normalizar_dataframe(df):
+    df.columns = [str(col).strip().lower() for col in df.columns]
+
+    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce")
+    df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
+
+    df = df.dropna(subset=["fecha", "producto", "categoria", "cantidad", "precio"])
+    df["total"] = df["cantidad"] * df["precio"]
+
+    return df
+
+    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce")
+    df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
+
+    df = df.dropna(subset=["fecha", "producto", "categoria", "cantidad", "precio"])
+    df["total"] = df["cantidad"] * df["precio"]
+
+    return df
+
+
+def generar_grafico_ventas_por_dia(df, filename):
+    ventas_dia = df.groupby("fecha")["total"].sum().sort_index()
+
+    plt.figure(figsize=(10, 5))
+    ventas_dia.plot(kind="line", marker="o")
+    plt.title("Ventas por día")
+    plt.xlabel("Fecha")
+    plt.ylabel("Ventas")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+
+def generar_grafico_ventas_por_categoria(df, filename):
+    ventas_categoria = df.groupby("categoria")["total"].sum().sort_values(ascending=False)
+
+    plt.figure(figsize=(10, 5))
+    ventas_categoria.plot(kind="bar")
+    plt.title("Ventas por categoría")
+    plt.xlabel("Categoría")
+    plt.ylabel("Ventas")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html")
+
+
+@app.route("/procesar", methods=["POST"])
+def procesar():
+    if "archivo" not in request.files:
+        return render_template("index.html", error="No se envió ningún archivo.")
+
+    archivo = request.files["archivo"]
+
+    if archivo.filename == "":
+        return render_template("index.html", error="Debes seleccionar un archivo Excel.")
+
+    if not archivo.filename.lower().endswith(".xlsx"):
+        return render_template("index.html", error="Solo se permiten archivos .xlsx")
+
+    unique_id = str(uuid4())
+    ruta_archivo = os.path.join(app.config["UPLOAD_FOLDER"], f"{unique_id}.xlsx")
+    archivo.save(ruta_archivo)
+
+    try:
+        df = pd.read_excel(ruta_archivo)
+
+        if not validar_columnas(df):
+            return render_template(
+                "index.html",
+                error="El Excel debe tener estas columnas: fecha, producto, categoria, cantidad, precio."
+            )
+
+        df = normalizar_dataframe(df)
+
+        if df.empty:
+            return render_template(
+                "index.html",
+                error="El archivo no contiene datos válidos después de la limpieza."
+            )
+
+        ventas_totales = round(df["total"].sum(), 2)
+        ticket_promedio = round(df["total"].mean(), 2)
+
+        producto_top = (
+            df.groupby("producto")["cantidad"]
+            .sum()
+            .sort_values(ascending=False)
+            .index[0]
+        )
+
+        ventas_por_categoria = (
+            df.groupby("categoria")["total"]
+            .sum()
+            .sort_values(ascending=False)
+            .round(2)
+            .to_dict()
+        )
+
+        top_productos = (
+            df.groupby("producto")["cantidad"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(5)
+            .to_dict()
+        )
+
+        chart_dia = f"charts/ventas_dia_{unique_id}.png"
+        chart_categoria = f"charts/ventas_categoria_{unique_id}.png"
+
+        generar_grafico_ventas_por_dia(df, os.path.join("static", chart_dia))
+        generar_grafico_ventas_por_categoria(df, os.path.join("static", chart_categoria))
+
+        return render_template(
+            "result.html",
+            ventas_totales=ventas_totales,
+            ticket_promedio=ticket_promedio,
+            producto_top=producto_top,
+            ventas_por_categoria=ventas_por_categoria,
+            top_productos=top_productos,
+            chart_dia=chart_dia,
+            chart_categoria=chart_categoria
+        )
+
+    except Exception as e:
+        return render_template("index.html", error=f"Ocurrió un error al procesar el archivo: {e}")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
