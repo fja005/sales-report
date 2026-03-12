@@ -1,5 +1,8 @@
 venv/
 __pycache__/
 *.pyc
-uploads/
-charts/
+*.db
+static/uploads/*
+static/charts/*
+!static/uploads/.gitkeep
+!static/charts/.gitkeep

@@ -12,39 +12,75 @@
   <body class="bg-light">
     <main class="container py-5">
       <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
           <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-              <h1 class="mb-3 text-center">Reporte automático de ventas</h1>
+            <div class="card-body p-4 p-md-5">
+              <h1 class="mb-3 text-center">Convierte tu archivo en un reporte claro de ventas</h1>
               <p class="text-muted text-center mb-4">
-                Sube tu archivo Excel y obtén un resumen claro de tus ventas.
+                Sube un Excel o CSV y obtén métricas, gráficos y un dashboard acumulado sin duplicar datos.
               </p>
 
               {% if error %}
               <div class="alert alert-danger">{{ error }}</div>
               {% endif %}
 
+              {% if mensaje %}
+              <div class="alert alert-success">{{ mensaje }}</div>
+              {% endif %}
+
+              <div class="row text-center mb-4">
+                <div class="col-md-4 mb-3">
+                  <div class="border rounded p-3 bg-light h-100">
+                    <strong>Ventas totales</strong>
+                    <div class="small text-muted">Mide rápido cuánto vendiste</div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="border rounded p-3 bg-light h-100">
+                    <strong>Productos top</strong>
+                    <div class="small text-muted">Descubre qué impulsa tu negocio</div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="border rounded p-3 bg-light h-100">
+                    <strong>Dashboard persistente</strong>
+                    <div class="small text-muted">Acumula ventas sin repetir registros</div>
+                  </div>
+                </div>
+              </div>
+
               <div class="alert alert-secondary">
-                <strong>Formato requerido del Excel:</strong><br />
+                <strong>Formato requerido del archivo:</strong><br />
                 fecha | producto | categoria | cantidad | precio
               </div>
 
-              <form action="/procesar" method="post" enctype="multipart/form-data">
+              <form action="/procesar" method="post" enctype="multipart/form-data" class="mb-3">
                 <div class="mb-3">
-                  <label for="archivo" class="form-label">Archivo Excel (.xlsx o .csv)</label>
+                  <label for="archivo" class="form-label">Archivo Excel o CSV (.xlsx o .csv)</label>
                   <input
                     class="form-control"
                     type="file"
                     id="archivo"
                     name="archivo"
-                    accept=".xlsx"
+                    accept=".xlsx,.csv"
                     required
                   />
                 </div>
 
-                <div class="d-grid">
+                <div class="d-grid gap-2">
                   <button type="submit" class="btn btn-primary">
                     Generar reporte
+                  </button>
+                  <a href="/dashboard" class="btn btn-outline-secondary">
+                    Ver dashboard acumulado
+                  </a>
+                </div>
+              </form>
+
+              <form action="/reiniciar-datos" method="post">
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-outline-danger">
+                    Reiniciar todos los datos del dashboard
                   </button>
                 </div>
               </form>

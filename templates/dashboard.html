@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resultado del Reporte</title>
+    <title>Dashboard de Ventas</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -12,29 +12,32 @@
   <body class="bg-light">
     <main class="container py-5">
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-        <h1 class="mb-0">Resultado del reporte</h1>
+        <h1 class="mb-0">Dashboard acumulado</h1>
         <div class="d-flex gap-2">
-          <a href="/" class="btn btn-outline-secondary">Subir otro archivo</a>
-          <a href="/dashboard" class="btn btn-primary">Ir al dashboard</a>
+          <a href="/" class="btn btn-outline-secondary">Volver al inicio</a>
+          {% if not sin_datos %}
+          <a href="/descargar-dashboard" class="btn btn-success">Descargar Excel</a>
+          {% endif %}
         </div>
       </div>
 
+      {% if sin_datos %}
       <div class="alert alert-info">
-        <strong>Registros nuevos guardados:</strong> {{ nuevas }}<br />
-        <strong>Registros duplicados omitidos:</strong> {{ duplicadas }}
+        Aún no hay ventas guardadas. Sube un archivo desde la página principal para comenzar.
       </div>
+      {% else %}
 
       <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-              <h2 class="h5">Ventas totales del archivo</h2>
+              <h2 class="h5">Ventas totales acumuladas</h2>
               <p class="fs-4 mb-0">$ {{ ventas_totales }}</p>
             </div>
           </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
               <h2 class="h5">Ticket promedio</h2>
@@ -43,11 +46,20 @@
           </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
               <h2 class="h5">Producto más vendido</h2>
               <p class="fs-4 mb-0">{{ producto_top }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h2 class="h5">Registros guardados</h2>
+              <p class="fs-4 mb-0">{{ total_registros }}</p>
             </div>
           </div>
         </div>
@@ -57,7 +69,7 @@
         <div class="col-lg-6">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-              <h2 class="h5 mb-3">Top 5 productos</h2>
+              <h2 class="h5 mb-3">Top productos</h2>
               <ul class="list-group">
                 {% for producto, cantidad in top_productos.items() %}
                 <li class="list-group-item d-flex justify-content-between">
@@ -91,7 +103,7 @@
         <div class="col-lg-6">
           <div class="card border-0 shadow-sm">
             <div class="card-body">
-              <h2 class="h5 mb-3">Gráfico: ventas por día</h2>
+              <h2 class="h5 mb-3">Gráfico acumulado: ventas por día</h2>
               <img
                 src="{{ url_for('static', filename=chart_dia) }}"
                 alt="Ventas por día"
@@ -104,7 +116,7 @@
         <div class="col-lg-6">
           <div class="card border-0 shadow-sm">
             <div class="card-body">
-              <h2 class="h5 mb-3">Gráfico: ventas por categoría</h2>
+              <h2 class="h5 mb-3">Gráfico acumulado: ventas por categoría</h2>
               <img
                 src="{{ url_for('static', filename=chart_categoria) }}"
                 alt="Ventas por categoría"
@@ -114,6 +126,8 @@
           </div>
         </div>
       </div>
+
+      {% endif %}
     </main>
   </body>
 </html>
