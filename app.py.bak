@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+import unicodedata
 from uuid import uuid4
 
 import pandas as pd
@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -21,15 +21,44 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["CHART_FOLDER"] = CHART_FOLDER
 
 
+def archivo_permitido(filename):
+    extensiones_permitidas = {".xlsx", ".csv"}
+    _, extension = os.path.splitext(filename.lower())
+    return extension in extensiones_permitidas
+
+
+def limpiar_nombre_columna(col):
+    col = str(col).strip().lower()
+    col = unicodedata.normalize("NFKD", col).encode("ascii", "ignore").decode("utf-8")
+    col = col.replace("_", " ")
+    col = " ".join(col.split())
+    return col
+
+
+def normalizar_nombres_columnas(df):
+    df.columns = [limpiar_nombre_columna(col) for col in df.columns]
+
+    equivalencias = {
+        "categoría": "categoria",
+        "fecha venta": "fecha",
+        "fecha de venta": "fecha",
+        "producto vendido": "producto",
+        "precio unitario": "precio",
+        "precio venta": "precio",
+    }
+
+    df.rename(columns=equivalencias, inplace=True)
+    return df
+
+
 def validar_columnas(df):
     columnas_esperadas = {"fecha", "producto", "categoria", "cantidad", "precio"}
-    columnas_archivo = {str(col).strip().lower() for col in df.columns}
-    return columnas_esperadas.issubset(columnas_archivo)
+    columnas_archivo = set(df.columns)
+    faltantes = columnas_esperadas - columnas_archivo
+    return faltantes
 
 
 def normalizar_dataframe(df):
-    df.columns = [str(col).strip().lower() for col in df.columns]
-
     df["producto"] = df["producto"].astype(str).str.strip()
     df["categoria"] = df["categoria"].astype(str).str.strip()
 
@@ -43,26 +72,33 @@ def normalizar_dataframe(df):
     return df
 
 
-def normalizar_dataframe(df):
-    df.columns = [str(col).strip().lower() for col in df.columns]
 
-    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
-    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce")
-    df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
+def leer_archivo(ruta_archivo):
+    _, extension = os.path.splitext(ruta_archivo.lower())
 
-    df = df.dropna(subset=["fecha", "producto", "categoria", "cantidad", "precio"])
-    df["total"] = df["cantidad"] * df["precio"]
+    if extension == ".xlsx":
+        return pd.read_excel(ruta_archivo, engine="openpyxl")
 
-    return df
+    elif extension == ".csv":
+        # Intentar detección automática de separador
+        try:
+            return pd.read_csv(ruta_archivo, sep=None, engine="python", encoding="utf-8-sig")
+        except UnicodeDecodeError:
+            try:
+                return pd.read_csv(ruta_archivo, sep=None, engine="python", encoding="latin-1")
+            except Exception as e:
+                raise ValueError(
+                    "No se pudo leer el archivo CSV. Revisa que esté guardado como CSV válido "
+                    "y que use separador coma (,) o punto y coma (;)."
+                ) from e
+        except Exception as e:
+            raise ValueError(
+                "No se pudo leer el archivo CSV. Revisa que esté guardado como CSV válido "
+                "y que use separador coma (,) o punto y coma (;)."
+            ) from e
 
-    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
-    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce")
-    df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
-
-    df = df.dropna(subset=["fecha", "producto", "categoria", "cantidad", "precio"])
-    df["total"] = df["cantidad"] * df["precio"]
-
-    return df
+    else:
+        raise ValueError("Formato de archivo no soportado. Solo se permiten .xlsx y .csv.")
 
 
 def generar_grafico_ventas_por_dia(df, filename):
@@ -106,24 +142,35 @@ def procesar():
     archivo = request.files["archivo"]
 
     if archivo.filename == "":
-        return render_template("index.html", error="Debes seleccionar un archivo Excel.")
+        return render_template("index.html", error="Debes seleccionar un archivo.")
 
-    if not archivo.filename.lower().endswith(".xlsx"):
-        return render_template("index.html", error="Solo se permiten archivos .xlsx")
+    if not archivo_permitido(archivo.filename):
+        return render_template("index.html", error="Solo se permiten archivos .xlsx o .csv")
 
     unique_id = str(uuid4())
-    ruta_archivo = os.path.join(app.config["UPLOAD_FOLDER"], f"{unique_id}.xlsx")
+    _, extension = os.path.splitext(archivo.filename.lower())
+    ruta_archivo = os.path.join(app.config["UPLOAD_FOLDER"], f"{unique_id}{extension}")
     archivo.save(ruta_archivo)
 
     try:
-        df = pd.read_excel(ruta_archivo)
+        df = leer_archivo(ruta_archivo)
 
-        if not validar_columnas(df):
+        # Primero normalizar nombres de columnas
+        df = normalizar_nombres_columnas(df)
+
+        # Luego validar columnas
+        faltantes = validar_columnas(df)
+        if faltantes:
             return render_template(
                 "index.html",
-                error="El Excel debe tener estas columnas: fecha, producto, categoria, cantidad, precio."
+            error=(
+                "Faltan estas columnas en el archivo: "
+                + ", ".join(sorted(faltantes))
+                + ". Si tu Archivo es CSV revisa si usa separador coma (,) o punto y coma (;)."
             )
+        )
 
+        # Luego limpiar datos
         df = normalizar_dataframe(df)
 
         if df.empty:
@@ -179,7 +226,6 @@ def procesar():
         return render_template("index.html", error=f"Ocurrió un error al procesar el archivo: {e}")
 
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT",5000))
-    app.run(host="0.0.0.0",port=port)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
