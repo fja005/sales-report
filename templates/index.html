@@ -1,93 +1,146 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reporte de Ventas</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="bg-light">
-    <main class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-9">
-          <div class="card shadow-sm border-0">
-            <div class="card-body p-4 p-md-5">
-              <h1 class="mb-3 text-center">Convierte tu archivo en un reporte claro de ventas</h1>
-              <p class="text-muted text-center mb-4">
-                Sube un Excel o CSV y obtén métricas, gráficos y un dashboard acumulado sin duplicar datos.
-              </p>
+{% extends "base.html" %}
 
-              {% if error %}
-              <div class="alert alert-danger">{{ error }}</div>
-              {% endif %}
+{% block title %}{{ t["app_title"] }}{% endblock %}
 
-              {% if mensaje %}
-              <div class="alert alert-success">{{ mensaje }}</div>
-              {% endif %}
+{% block content %}
+<div class="card shadow-sm border-0">
+  <div class="card-body p-4 p-md-5">
+    <div class="text-center mb-4">
+      <h2 class="display-6 fw-bold mb-3">{{ t["hero_title"] }}</h2>
+      <p class="text-muted mb-0">
+        {{ t["hero_subtitle"] }}
+      </p>
+    </div>
 
-              <div class="row text-center mb-4">
-                <div class="col-md-4 mb-3">
-                  <div class="border rounded p-3 bg-light h-100">
-                    <strong>Ventas totales</strong>
-                    <div class="small text-muted">Mide rápido cuánto vendiste</div>
-                  </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <div class="border rounded p-3 bg-light h-100">
-                    <strong>Productos top</strong>
-                    <div class="small text-muted">Descubre qué impulsa tu negocio</div>
-                  </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <div class="border rounded p-3 bg-light h-100">
-                    <strong>Dashboard persistente</strong>
-                    <div class="small text-muted">Acumula ventas sin repetir registros</div>
-                  </div>
-                </div>
-              </div>
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
 
-              <div class="alert alert-secondary">
-                <strong>Formato requerido del archivo:</strong><br />
-                fecha | producto | categoria | cantidad | precio
-              </div>
+    {% if mensaje %}
+    <div class="alert alert-success">{{ mensaje }}</div>
+    {% endif %}
 
-              <form action="/procesar" method="post" enctype="multipart/form-data" class="mb-3">
-                <div class="mb-3">
-                  <label for="archivo" class="form-label">Archivo Excel o CSV (.xlsx o .csv)</label>
-                  <input
-                    class="form-control"
-                    type="file"
-                    id="archivo"
-                    name="archivo"
-                    accept=".xlsx,.csv"
-                    required
-                  />
-                </div>
-
-                <div class="d-grid gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    Generar reporte
-                  </button>
-                  <a href="/dashboard" class="btn btn-outline-secondary">
-                    Ver dashboard acumulado
-                  </a>
-                </div>
-              </form>
-
-              <form action="/reiniciar-datos" method="post">
-                <div class="d-grid">
-                  <button type="submit" class="btn btn-outline-danger">
-                    Reiniciar todos los datos del dashboard
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+    <div class="row text-center mb-4">
+      <div class="col-md-4 mb-3">
+        <div class="border rounded p-3 bg-light h-100">
+          <strong>{{ t["sales_total"] }}</strong>
+          <div class="small text-muted mt-1">{{ t["sales_total_desc"] }}</div>
         </div>
       </div>
-    </main>
-  </body>
-</html>
+
+      <div class="col-md-4 mb-3">
+        <div class="border rounded p-3 bg-light h-100">
+          <strong>{{ t["top_products"] }}</strong>
+          <div class="small text-muted mt-1">{{ t["top_products_desc"] }}</div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <div class="border rounded p-3 bg-light h-100">
+          <strong>{{ t["business_dashboard"] }}</strong>
+          <div class="small text-muted mt-1">{{ t["business_dashboard_desc"] }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-secondary mb-4">
+      <strong>{{ t["required_format"] }}</strong><br>
+      fecha | producto | categoria | cantidad | precio
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="border rounded p-4 bg-white h-100">
+          <h3 class="h5 mb-3">{{ t["generate_report"] }}</h3>
+
+          <form action="/procesar?lang={{ lang }}" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="negocio" class="form-label">{{ t["business_name"] }}</label>
+              <input
+                class="form-control"
+                type="text"
+                id="negocio"
+                name="negocio"
+                placeholder="{{ t['business_placeholder'] }}"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="archivo" class="form-label">{{ t["file_label"] }}</label>
+              <input
+                class="form-control"
+                type="file"
+                id="archivo"
+                name="archivo"
+                accept=".xlsx,.csv"
+                required
+              />
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                {{ t["generate_report"] }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="border rounded p-4 bg-white h-100">
+          <h3 class="h5 mb-3">{{ t["view_business_dashboard"] }}</h3>
+
+          <form action="/dashboard" method="get">
+            <input type="hidden" name="lang" value="{{ lang }}">
+            <div class="mb-3">
+              <label for="negocio_dashboard" class="form-label">{{ t["business_name"] }}</label>
+              <input
+                class="form-control"
+                type="text"
+                id="negocio_dashboard"
+                name="negocio"
+                placeholder="{{ t['write_business_name'] }}"
+                required
+              />
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-outline-secondary">
+                {{ t["view_dashboard"] }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="border rounded p-4 bg-white">
+          <h3 class="h5 mb-3">{{ t["reset_business_data"] }}</h3>
+
+          <form action="/reiniciar-datos?lang={{ lang }}" method="post">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-8">
+                <label for="negocio_reiniciar" class="form-label">{{ t["business_name"] }}</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  id="negocio_reiniciar"
+                  name="negocio"
+                  placeholder="{{ t['write_business_name'] }}"
+                  required
+                />
+              </div>
+
+              <div class="col-md-4 d-grid">
+                <button type="submit" class="btn btn-outline-danger">
+                  {{ t["reset_button"] }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
