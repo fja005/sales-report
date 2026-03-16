@@ -695,25 +695,25 @@ def procesar():
         generar_grafico_ventas_por_categoria(df, os.path.join("static", chart_categoria))
 
         session["last_result"] = {
-            "negocio": str(negocio),
-            "ventas_totales": float(ventas_totales),
-            "ticket_promedio": float(ticket_promedio),
-            "producto_top": str(producto_top),
-            "ventas_por_categoria": {str(k): float(v) for k, v in ventas_por_categoria.items()},
-            "top_productos": {str(k): int(to_python_type(v)) for k, v in top_productos.items()},
-            "chart_dia": str(chart_dia),
-            "chart_categoria": str(chart_categoria),
-            "nuevas": int(to_python_type(nuevas)),
-            "duplicadas": int(to_python_type(duplicadas)),
-            "ingreso_total": float(ingreso_total),
-            "costo_total": float(costo_total),
-            "utilidad_total": float(utilidad_total),
-            "margen_total": float(margen_total) if margen_total is not None else None,
-            "tiene_costos": bool(tiene_costos),
-            "top_profit_products": {str(k): float(v) for k, v in top_profit_products.items()},
-            "profit_by_category": {str(k): float(v) for k, v in profit_by_category.items()},
-            "insights": [str(x) for x in insights],
-            "acciones": [str(x) for x in acciones]
+            "negocio": negocio,
+            "ventas_totales": ventas_totales,
+            "ticket_promedio": ticket_promedio,
+            "producto_top": producto_top,
+            "ventas_por_categoria": ventas_por_categoria,
+            "top_productos": top_productos,
+            "chart_dia": chart_dia,
+            "chart_categoria": chart_categoria,
+            "nuevas": nuevas,
+            "duplicadas": duplicadas,
+            "ingreso_total": ingreso_total,
+            "costo_total": costo_total,
+            "utilidad_total": utilidad_total,
+            "margen_total": margen_total,
+            "tiene_costos": tiene_costos,
+            "top_profit_products": top_profit_products,
+            "profit_by_category": profit_by_category,
+            "insights": insights,
+            "acciones": acciones
         }
 
         return redirect(url_for("resultado", lang=lang))

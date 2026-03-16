@@ -7,9 +7,7 @@
   <div class="card-body p-4 p-md-5">
     <div class="text-center mb-4">
       <h2 class="display-6 fw-bold mb-3">{{ t["hero_title"] }}</h2>
-      <p class="text-muted mb-0">
-        {{ t["hero_subtitle"] }}
-      </p>
+      <p class="text-muted mb-0">{{ t["hero_subtitle"] }}</p>
     </div>
 
     {% if error %}
@@ -27,14 +25,12 @@
           <div class="small text-muted mt-1">{{ t["sales_total_desc"] }}</div>
         </div>
       </div>
-
       <div class="col-md-4 mb-3">
         <div class="border rounded p-3 bg-light h-100">
           <strong>{{ t["top_products"] }}</strong>
           <div class="small text-muted mt-1">{{ t["top_products_desc"] }}</div>
         </div>
       </div>
-
       <div class="col-md-4 mb-3">
         <div class="border rounded p-3 bg-light h-100">
           <strong>{{ t["business_dashboard"] }}</strong>
@@ -45,7 +41,8 @@
 
     <div class="alert alert-secondary mb-4">
       <strong>{{ t["required_format"] }}</strong><br>
-      fecha | producto | categoria | cantidad | precio
+      fecha | producto | categoria | cantidad | precio<br>
+      <strong>{{ t["required_optional"] }}</strong> costo_unitario
     </div>
 
     <div class="row g-4">
@@ -56,32 +53,16 @@
           <form action="/procesar?lang={{ lang }}" method="post" enctype="multipart/form-data">
             <div class="mb-3">
               <label for="negocio" class="form-label">{{ t["business_name"] }}</label>
-              <input
-                class="form-control"
-                type="text"
-                id="negocio"
-                name="negocio"
-                placeholder="{{ t['business_placeholder'] }}"
-                required
-              />
+              <input class="form-control" type="text" id="negocio" name="negocio" placeholder="{{ t['business_placeholder'] }}" required />
             </div>
 
             <div class="mb-3">
               <label for="archivo" class="form-label">{{ t["file_label"] }}</label>
-              <input
-                class="form-control"
-                type="file"
-                id="archivo"
-                name="archivo"
-                accept=".xlsx,.csv"
-                required
-              />
+              <input class="form-control" type="file" id="archivo" name="archivo" accept=".xlsx,.csv" required />
             </div>
 
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">
-                {{ t["generate_report"] }}
-              </button>
+              <button type="submit" class="btn btn-primary">{{ t["generate_report"] }}</button>
             </div>
           </form>
         </div>
@@ -95,19 +76,10 @@
             <input type="hidden" name="lang" value="{{ lang }}">
             <div class="mb-3">
               <label for="negocio_dashboard" class="form-label">{{ t["business_name"] }}</label>
-              <input
-                class="form-control"
-                type="text"
-                id="negocio_dashboard"
-                name="negocio"
-                placeholder="{{ t['write_business_name'] }}"
-                required
-              />
+              <input class="form-control" type="text" id="negocio_dashboard" name="negocio" placeholder="{{ t['write_business_name'] }}" required />
             </div>
             <div class="d-grid">
-              <button type="submit" class="btn btn-outline-secondary">
-                {{ t["view_dashboard"] }}
-              </button>
+              <button type="submit" class="btn btn-outline-secondary">{{ t["view_dashboard"] }}</button>
             </div>
           </form>
         </div>
@@ -121,20 +93,10 @@
             <div class="row g-3 align-items-end">
               <div class="col-md-8">
                 <label for="negocio_reiniciar" class="form-label">{{ t["business_name"] }}</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  id="negocio_reiniciar"
-                  name="negocio"
-                  placeholder="{{ t['write_business_name'] }}"
-                  required
-                />
+                <input class="form-control" type="text" id="negocio_reiniciar" name="negocio" placeholder="{{ t['write_business_name'] }}" required />
               </div>
-
               <div class="col-md-4 d-grid">
-                <button type="submit" class="btn btn-outline-danger">
-                  {{ t["reset_button"] }}
-                </button>
+                <button type="submit" class="btn btn-outline-danger">{{ t["reset_button"] }}</button>
               </div>
             </div>
           </form>

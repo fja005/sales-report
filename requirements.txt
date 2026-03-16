@@ -4,3 +4,4 @@ openpyxl
 matplotlib
 gunicorn
 Flask-SQLAlchemy
+psycopg2-binary

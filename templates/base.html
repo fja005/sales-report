@@ -10,7 +10,6 @@
   />
 </head>
 <body class="bg-light">
-
   <main class="container py-4 py-md-5">
     <div class="row justify-content-center">
       <div class="col-lg-10">
@@ -25,7 +24,6 @@
               {% if request.args.get("negocio") %}
               <input type="hidden" name="negocio" value="{{ request.args.get('negocio') }}">
               {% endif %}
-
               <label for="lang" class="fw-semibold mb-0">{{ t["language"] }}</label>
               <select
                 name="lang"
@@ -47,6 +45,5 @@
       </div>
     </div>
   </main>
-
 </body>
 </html>

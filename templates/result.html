@@ -14,30 +14,67 @@
   <strong>{{ t["duplicate_records"] }}:</strong> {{ duplicadas }}
 </div>
 
+{% if not tiene_costos %}
+<div class="alert alert-warning">{{ t["profit_note_missing"] }}</div>
+{% endif %}
+
 <div class="row g-4 mb-4">
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <h2 class="h5">{{ t["file_sales_total"] }}</h2>
-        <p class="fs-4 mb-0">$ {{ ventas_totales }}</p>
+        <h2 class="h5">{{ t["revenue"] }}</h2>
+        <p class="fs-4 mb-0">$ {{ ingreso_total }}</p>
       </div>
     </div>
   </div>
-
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <h2 class="h5">{{ t["avg_ticket"] }}</h2>
-        <p class="fs-4 mb-0">$ {{ ticket_promedio }}</p>
+        <h2 class="h5">{{ t["cost"] }}</h2>
+        <p class="fs-4 mb-0">$ {{ costo_total }}</p>
       </div>
     </div>
   </div>
-
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <h2 class="h5">{{ t["best_selling_product"] }}</h2>
-        <p class="fs-4 mb-0">{{ producto_top }}</p>
+        <h2 class="h5">{{ t["profit"] }}</h2>
+        <p class="fs-4 mb-0">$ {{ utilidad_total }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5">{{ t["margin"] }}</h2>
+        <p class="fs-4 mb-0">{% if margen_total is not none %}{{ margen_total }}%{% else %}—{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{{ t["insights"] }}</h2>
+        <ul class="list-group">
+          {% for item in insights %}
+          <li class="list-group-item">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{{ t["actions"] }}</h2>
+        <ul class="list-group">
+          {% for item in acciones %}
+          <li class="list-group-item">{{ item }}</li>
+          {% endfor %}
+        </ul>
       </div>
     </div>
   </div>
@@ -77,29 +114,56 @@
   </div>
 </div>
 
-<div class="row g-4">
+{% if tiene_costos %}
+<div class="row g-4 mb-4">
   <div class="col-lg-6">
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <h2 class="h5 mb-3">{{ t["chart_sales_by_day"] }}</h2>
-        <img
-          src="{{ url_for('static', filename=chart_dia) }}"
-          alt="Ventas por día"
-          class="img-fluid rounded"
-        />
+        <h2 class="h5 mb-3">{{ t["top_profit_products"] }}</h2>
+        <ul class="list-group">
+          {% for producto, utilidad in top_profit_products.items() %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ producto }}</span>
+            <strong>$ {{ utilidad }}</strong>
+          </li>
+          {% endfor %}
+        </ul>
       </div>
     </div>
   </div>
 
   <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{{ t["profit_by_category"] }}</h2>
+        <ul class="list-group">
+          {% for categoria, utilidad in profit_by_category.items() %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ categoria }}</span>
+            <strong>$ {{ utilidad }}</strong>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{{ t["chart_sales_by_day"] }}</h2>
+        <img src="{{ url_for('static', filename=chart_dia) }}" alt="Ventas por día" class="img-fluid rounded" />
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
     <div class="card border-0 shadow-sm">
       <div class="card-body">
         <h2 class="h5 mb-3">{{ t["chart_sales_by_category"] }}</h2>
-        <img
-          src="{{ url_for('static', filename=chart_categoria) }}"
-          alt="Ventas por categoría"
-          class="img-fluid rounded"
-        />
+        <img src="{{ url_for('static', filename=chart_categoria) }}" alt="Ventas por categoría" class="img-fluid rounded" />
       </div>
     </div>
   </div>
