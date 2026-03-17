@@ -1,7 +1,9 @@
 import io
 import os
+import csv
 import unicodedata
 from uuid import uuid4
+from datetime import datetime
 
 import pandas as pd
 import matplotlib
@@ -15,7 +17,8 @@ from flask import (
     send_file,
     redirect,
     url_for,
-    session
+    session,
+    Response
 )
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint
@@ -105,7 +108,13 @@ TRANSLATIONS = {
         "top_profit_products": "Top productos por utilidad",
         "profit_by_category": "Utilidad por categoría",
         "profit_note_missing": "No se encontró la columna opcional costo_unitario. Se omitieron los cálculos de utilidad y margen.",
-        "no_result_available": "No hay un resultado disponible. Genera un reporte primero."
+        "no_result_available": "No hay un resultado disponible. Genera un reporte primero.",
+        "lead_name": "Tu nombre",
+        "lead_email": "Tu email",
+        "lead_checkbox": "Quiero recibir mejoras, plantillas y reportes automáticos por email",
+        "lead_required": "Debes ingresar nombre y email.",
+        "download_leads": "Descargar leads",
+        "lead_saved": "Lead guardado correctamente."
     },
     "en": {
         "app_title": "Sales Report",
@@ -171,7 +180,13 @@ TRANSLATIONS = {
         "top_profit_products": "Top products by profit",
         "profit_by_category": "Profit by category",
         "profit_note_missing": "Optional column costo_unitario was not found. Profit and margin calculations were skipped.",
-        "no_result_available": "There is no available result. Generate a report first."
+        "no_result_available": "There is no available result. Generate a report first.",
+        "lead_name": "Your name",
+        "lead_email": "Your email",
+        "lead_checkbox": "I want to receive product updates, templates, and automated reports by email",
+        "lead_required": "You must enter name and email.",
+        "download_leads": "Download leads",
+        "lead_saved": "Lead saved successfully."
     },
     "id": {
         "app_title": "Laporan Penjualan",
@@ -237,7 +252,13 @@ TRANSLATIONS = {
         "top_profit_products": "Produk teratas berdasarkan laba",
         "profit_by_category": "Laba per kategori",
         "profit_note_missing": "Kolom opsional costo_unitario tidak ditemukan. Perhitungan laba dan margin dilewati.",
-        "no_result_available": "Tidak ada hasil yang tersedia. Buat laporan terlebih dahulu."
+        "no_result_available": "Tidak ada hasil yang tersedia. Buat laporan terlebih dahulu.",
+        "lead_name": "Nama Anda",
+        "lead_email": "Email Anda",
+        "lead_checkbox": "Saya ingin menerima update produk, template, dan laporan otomatis melalui email",
+        "lead_required": "Anda harus mengisi nama dan email.",
+        "download_leads": "Unduh leads",
+        "lead_saved": "Lead berhasil disimpan."
     },
 }
 
@@ -263,6 +284,7 @@ def to_python_type(value):
             pass
     return value
 
+
 class Venta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     negocio = db.Column(db.String(200), nullable=False, index=True)
@@ -284,6 +306,20 @@ class Venta(db.Model):
             "costo_unitario",
             name="uq_venta_unica_por_negocio"
         ),
+    )
+
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    negocio = db.Column(db.String(200), nullable=False, index=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(200), nullable=False, index=True)
+    idioma = db.Column(db.String(10), nullable=False)
+    consentimiento = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("negocio", "email", name="uq_lead_negocio_email"),
     )
 
 
@@ -427,6 +463,25 @@ def guardar_ventas_en_db(df, negocio):
     return nuevas, duplicadas
 
 
+def guardar_lead(nombre, email, negocio, idioma, consentimiento):
+    existente = Lead.query.filter_by(negocio=negocio, email=email).first()
+    if existente:
+        existente.nombre = nombre
+        existente.idioma = idioma
+        existente.consentimiento = bool(consentimiento)
+    else:
+        db.session.add(
+            Lead(
+                negocio=negocio,
+                nombre=nombre,
+                email=email,
+                idioma=idioma,
+                consentimiento=bool(consentimiento)
+            )
+        )
+    db.session.commit()
+
+
 def obtener_dataframe_db(negocio):
     ventas = Venta.query.filter_by(negocio=negocio).all()
 
@@ -546,26 +601,17 @@ def generar_excel_reporte(df):
 
     ventas_categoria = (
         df.groupby("categoria")["ingreso"]
-        .sum()
-        .sort_values(ascending=False)
-        .round(2)
-        .reset_index()
+        .sum().sort_values(ascending=False).round(2).reset_index()
     )
 
     top_productos = (
         df.groupby("producto")["cantidad"]
-        .sum()
-        .sort_values(ascending=False)
-        .head(10)
-        .reset_index()
+        .sum().sort_values(ascending=False).head(10).reset_index()
     )
 
     ventas_dia = (
         df.groupby("fecha")["ingreso"]
-        .sum()
-        .sort_index()
-        .round(2)
-        .reset_index()
+        .sum().sort_index().round(2).reset_index()
     )
 
     resumen = pd.DataFrame({
@@ -576,18 +622,11 @@ def generar_excel_reporte(df):
     if "utilidad" in df.columns and df["utilidad"].sum() != 0:
         profit_by_category = (
             df.groupby("categoria")["utilidad"]
-            .sum()
-            .sort_values(ascending=False)
-            .round(2)
-            .reset_index()
+            .sum().sort_values(ascending=False).round(2).reset_index()
         )
         top_profit_products = (
             df.groupby("producto")["utilidad"]
-            .sum()
-            .sort_values(ascending=False)
-            .head(10)
-            .round(2)
-            .reset_index()
+            .sum().sort_values(ascending=False).head(10).round(2).reset_index()
         )
     else:
         profit_by_category = pd.DataFrame(columns=["categoria", "utilidad"])
@@ -615,10 +654,17 @@ def index():
 @app.route("/procesar", methods=["POST"])
 def procesar():
     lang = get_lang()
+
     negocio = limpiar_texto(request.form.get("negocio", ""))
+    nombre = limpiar_texto(request.form.get("nombre", ""))
+    email = limpiar_texto(request.form.get("email", ""))
+    consentimiento = request.form.get("consentimiento") == "on"
 
     if not negocio:
         return render_template("index.html", lang=lang, t=TRANSLATIONS[lang], error=tr(lang, "ask_business_name"))
+
+    if not nombre or not email:
+        return render_template("index.html", lang=lang, t=TRANSLATIONS[lang], error=tr(lang, "lead_required"))
 
     if "archivo" not in request.files:
         return render_template("index.html", lang=lang, t=TRANSLATIONS[lang], error=tr(lang, "no_file_sent"))
@@ -637,6 +683,8 @@ def procesar():
     archivo.save(ruta_archivo)
 
     try:
+        guardar_lead(nombre, email, negocio, lang, consentimiento)
+
         df = leer_archivo(ruta_archivo, lang)
         df = normalizar_nombres_columnas(df)
 
@@ -663,7 +711,7 @@ def procesar():
 
         ventas_totales = ingreso_total
         ticket_promedio = round(df["ingreso"].mean(), 2)
-        producto_top = df.groupby("producto")["cantidad"].sum().sort_values(ascending=False).index[0]
+        producto_top = str(df.groupby("producto")["cantidad"].sum().sort_values(ascending=False).index[0])
 
         ventas_por_categoria = (
             df.groupby("categoria")["ingreso"]
@@ -765,7 +813,7 @@ def dashboard():
 
     ventas_totales = ingreso_total
     ticket_promedio = round(df["ingreso"].mean(), 2)
-    producto_top = df.groupby("producto")["cantidad"].sum().sort_values(ascending=False).index[0]
+    producto_top = str(df.groupby("producto")["cantidad"].sum().sort_values(ascending=False).index[0])
 
     ventas_por_categoria = (
         df.groupby("categoria")["ingreso"]
@@ -859,6 +907,31 @@ def reiniciar_datos():
         lang=lang,
         t=TRANSLATIONS[lang],
         mensaje=f"{tr(lang, 'deleted_business_data')} {negocio}."
+    )
+
+
+@app.route("/descargar-leads", methods=["GET"])
+def descargar_leads():
+    leads = Lead.query.order_by(Lead.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["negocio", "nombre", "email", "idioma", "consentimiento", "created_at"])
+
+    for lead in leads:
+        writer.writerow([
+            lead.negocio,
+            lead.nombre,
+            lead.email,
+            lead.idioma,
+            lead.consentimiento,
+            lead.created_at.isoformat()
+        ])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=leads.csv"}
     )
 
 
